@@ -1,100 +1,156 @@
 import pygame
 import chess
 
+board = chess.Board()
+
+print(board)
+STARTING_FEN = chess.STARTING_FEN
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 DARK_BROWN = (109, 79, 75)
 LIGHT_BROWN = (237, 201, 175)
 SQUARE_SIZE = 60
 HIGHLIGHT_COLOR = (255, 0, 0)  # Red color for the border when hovered
-coordDict = {'a':0,'b':60,'c':120,'d':180,'e':240,'f':300,'g':360,'h':420}
-numberDict = {'1':420,'2':360,'3':300,'4':240,'5':180,'6':120,'7':60,'8':0}
+coordDict = {'a': 0, 'b': 60, 'c': 120, 'd': 180,
+             'e': 240, 'f': 300, 'g': 360, 'h': 420}
+numberDict = {'1': 420, '2': 360, '3': 300,
+              '4': 240, '5': 180, '6': 120, '7': 60, '8': 0}
+textBox = pygame.Rect(5, 485, 475, 25)
+toggleMode = pygame.Rect(5, 585, 50, 10)
 
-class Pieces:
-    def __init__(self,image,piece,coord):
-        self.image = image
-        self.piece = piece
-        self.coord = coord
-    def convertToCoord(self):
-        
-        return (coordDict[self.coord[0]],numberDict[self.coord[1]])
-    
-#load images into variables 
-#black pieces
-bB1 = Pieces(pygame.image.load("media/black_bishop.png"),"bishop","c8")
-bB2 = Pieces(pygame.image.load("media/black_bishop.png"),"bishop","f8")
-bK = Pieces(pygame.image.load("media/black_king.png"),"king","e8")
-bN1 = Pieces(pygame.image.load("media/black_knight.png"),"knight","b8")
-bN2 = Pieces(pygame.image.load("media/black_knight.png"),"knight","g8")
-bQ = Pieces(pygame.image.load("media/black_queen.png"),"queen","d8")
-bR1 = Pieces(pygame.image.load("media/black_rook.png"),"rook","a8")
-bR2 = Pieces(pygame.image.load("media/black_rook.png"),"rook","h8")
-#white pieces
-wB1 = Pieces(pygame.image.load("media/white_bishop.png"),"bishop","c1")
-wB2 = Pieces(pygame.image.load("media/white_bishop.png"),"bishop","f1")
-wK = Pieces(pygame.image.load("media/white_king.png"),"king","e1")
-wN1 = Pieces(pygame.image.load("media/white_knight.png"),"knight","b1")
-wN2 = Pieces(pygame.image.load("media/white_knight.png"),"knight","g1")
-wQ = Pieces(pygame.image.load("media/white_queen.png"),"queen","d1")
-wR1 = Pieces(pygame.image.load("media/white_rook.png"),"rook","a1")
-wR2 = Pieces(pygame.image.load("media/white_rook.png"),"rook","h1")
-#black pawns
-bP1 = Pieces(pygame.image.load("media/black_pawn.png"),"pawn","a7")
-bP2 = Pieces(pygame.image.load("media/black_pawn.png"),"pawn","b7")
-bP3 = Pieces(pygame.image.load("media/black_pawn.png"),"pawn","c7")
-bP4 = Pieces(pygame.image.load("media/black_pawn.png"),"pawn","d7")
-bP5 = Pieces(pygame.image.load("media/black_pawn.png"),"pawn","e7")
-bP6 = Pieces(pygame.image.load("media/black_pawn.png"),"pawn","f7")
-bP7 = Pieces(pygame.image.load("media/black_pawn.png"),"pawn","g7")
-bP8 = Pieces(pygame.image.load("media/black_pawn.png"),"pawn","h7")
-#white pawns
-wP1 = Pieces(pygame.image.load("media/white_pawn.png"),"pawn","a2")
-wP2 = Pieces(pygame.image.load("media/white_pawn.png"),"pawn","b2")
-wP3 = Pieces(pygame.image.load("media/white_pawn.png"),"pawn","c2")
-wP4 = Pieces(pygame.image.load("media/white_pawn.png"),"pawn","d2")
-wP5 = Pieces(pygame.image.load("media/white_pawn.png"),"pawn","e2")
-wP6 = Pieces(pygame.image.load("media/white_pawn.png"),"pawn","f2")
-wP7 = Pieces(pygame.image.load("media/white_pawn.png"),"pawn","g2")
-wP8 = Pieces(pygame.image.load("media/white_pawn.png"),"pawn","h2")
+piece_images = {
+    'r': pygame.image.load("media/black_rook.png"),
+    'n': pygame.image.load("media/black_knight.png"),
+    'b': pygame.image.load("media/black_bishop.png"),
+    'q': pygame.image.load("media/black_queen.png"),
+    'k': pygame.image.load("media/black_king.png"),
+    'p': pygame.image.load("media/black_pawn.png"),
+    'R': pygame.image.load("media/white_rook.png"),
+    'N': pygame.image.load("media/white_knight.png"),
+    'B': pygame.image.load("media/white_bishop.png"),
+    'Q': pygame.image.load("media/white_queen.png"),
+    'K': pygame.image.load("media/white_king.png"),
+    'P': pygame.image.load("media/white_pawn.png")
+}
 
-#list with all the pieces, when a piece is removed, it will be popped off the list and no longer rendered
-mainPieceList = [bB1,bB2,bK,bN1,bN2,bQ,bR1,bR2,wB1,wB2,wK,wN1,wN2,wQ,wR1,wR2,wP1,wP2,wP3,wP4,wP5,wP6,wP7,wP8,bP1,bP2,bP3,bP4,bP5,bP6,bP7,bP8]
-
-
-
-
-
-# pygame setup
 pygame.init()
+font = pygame.font.Font(None, 11)
 screen = pygame.display.set_mode((600, 600))
 pygame.display.set_icon(pygame.image.load("media/black_knight.png"))
 pygame.display.set_caption("Chess GUI")
 clock = pygame.time.Clock()
+inputMode = "uci"
+# Variable to hold the user input
+user_input = ""
+textBoxIsActive = False  # Track if text box is active
 
 
 def main():
+    global user_input, textBoxIsActive, inputMode
     running = True
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-           
-# draw elements here
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if toggleMode.collidepoint(pygame.mouse.get_pos()):
+                    if inputMode == "san":
+                        inputMode = "uci"
+                        print(inputMode)
+                    else:
+                        inputMode = "san"
+                        print(inputMode)
+            # Check if mouse clicks on the text box
+
+            # Handle keyboard input when the text box is active
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_BACKSPACE:
+                    # Remove the last character from user input
+                    user_input = user_input[:-1]
+                elif event.key == pygame.K_RETURN:
+                    # For Enter key, deactivate text box
+                    userMove = user_input
+                    user_input = ""
+
+                    print(userMove)
+                    if is_legal_move(board, userMove):
+                        print("move was legal")
+                        board.push_uci(userMove)
+                        gameOverCheck(board)
+
+                else:
+                    # Add character to user input
+                    user_input += event.unicode
+
+        screen.fill(color=(46, 43, 38))
         drawBoard(screen)
-        printPieces(mainPieceList)
+
         get_square_under_mouse(screen)
-        
-        
+        draw_pieces_from_fen(screen, board.fen())
+
+        # Draw text box and user input
+        pygame.draw.rect(screen, pygame.Color((181, 178, 172)), textBox)
+        draw_text_on_rect(screen, user_input,
+                          textBox, font, BLACK, WHITE)
+        pygame.draw.rect(screen, WHITE, toggleMode)
+        draw_text_on_rect(screen, "toggle", toggleMode, font, BLACK, WHITE)
         pygame.display.flip()
 
 
+def is_legal_move(board, uci_move):
+    try:
+        # Convert the UCI move string into a move object
+        move = chess.Move.from_uci(uci_move)
+
+        # Check if the move is legal
+        if move in board.legal_moves:
+            return True
+        else:
+            return False
+    except:
+        # If the UCI move format is invalid or can't be parsed
+        return False
 
 
+def draw_pieces_from_fen(screen, fen):
+    """Takes a FEN string and draws the pieces on the board."""
+    fen_parts = fen.split(
+        " ")[0]  # Extract only the board layout from the FEN string
+    ranks = fen_parts.split("/")
 
+    for row_index, rank in enumerate(ranks):
+        col_index = 0
+        for char in rank:
+            if char.isdigit():
+                # Empty squares (advance by the number of empty squares)
+                col_index += int(char)
+            else:
+                # There's a piece to draw
+                # Fetch the correct image based on the FEN char
+                piece = piece_images[char]
+                x = col_index * SQUARE_SIZE
+                y = row_index * SQUARE_SIZE
+                screen.blit(piece, (x, y))
+                col_index += 1
+
+
+def draw_text_on_rect(screen, text, rect, font, text_color, bg_color):
+    # Draw the rectangle
+    pygame.draw.rect(screen, bg_color, rect)
+
+    # Render the text
+    text_surface = font.render(text, True, text_color)
+
+    # Center the text on the rectangle
+    text_rect = text_surface.get_rect(center=rect.center)
+
+    # Blit the text onto the rectangle
+    screen.blit(text_surface, text_rect)
 
 
 def drawBoard(screen):
-    #Draws an 8x8 chessboard using alternating colors.
+    # Draws an 8x8 chessboard using alternating colors.
     for row in range(8):
         for col in range(8):
             # Alternate between two colors
@@ -102,23 +158,30 @@ def drawBoard(screen):
             pygame.draw.rect(screen, color, pygame.Rect(
                 col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
 
-def printPieces(piece_list):
-    for i in piece_list:
-        screen.blit(i.image,i.convertToCoord())
-
 
 def get_square_under_mouse(screen):
     mouse_pos = pygame.Vector2(pygame.mouse.get_pos())
     for row in range(8):
         for col in range(8):
-            square_rect = pygame.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+            square_rect = pygame.Rect(
+                col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
             if square_rect.collidepoint(mouse_pos):
-                pygame.draw.rect(screen, HIGHLIGHT_COLOR, square_rect, 3)  # Draw a red border
+                pygame.draw.rect(screen, HIGHLIGHT_COLOR,
+                                 square_rect, 3)  # Draw a red border
 
-def make_pieces_draggable(piece_list):
-    pass
 
+def gameOverCheck(board):
+    if board.is_checkmate():
+        return f"Checkmate! {'White' if board.turn else 'Black'} wins!"
+    elif board.is_stalemate():
+        return "stalemate"
+    elif board.is_insufficient_material():
+        return "insufficient"
+    elif board.is_seventyfive_moves():
+        return "75"
+    elif board.is_fivefold_repetition():
+        return "fivefold"
+    return False
 
 
 main()
-print(f"{wB1.convertToCoord()} {wB1.coord}")
